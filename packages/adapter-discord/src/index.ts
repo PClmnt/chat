@@ -213,7 +213,6 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
     // Handle APPLICATION_COMMAND (slash commands)
     if (interaction.type === InteractionType.ApplicationCommand) {
       this.handleApplicationCommandInteraction(interaction, options);
-      // ACK the interaction immediately
       return this.respondToInteraction({
         type: InteractionResponseType.DeferredChannelMessageWithSource,
       });
