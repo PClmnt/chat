@@ -243,7 +243,7 @@ describe("Discord Integration", () => {
         "USER789",
         TEST_THREAD_ID
       );
-      expect(mockApi.messages.create).toHaveBeenCalledWith(
+      expect(mockApi.interactions.editOriginal).toHaveBeenCalledWith(
         expect.objectContaining({
           content: "Slash command received!",
         })
