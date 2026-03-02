@@ -823,7 +823,12 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
     if (!slashContext || slashContext.channelId !== threadId) {
       return undefined;
     }
-    return this.postSlashCommandResponse(slashContext, threadId, payload, files);
+    return this.postSlashCommandResponse(
+      slashContext,
+      threadId,
+      payload,
+      files
+    );
   }
 
   private async postSlashCommandResponse(

@@ -333,7 +333,8 @@ const CHANNEL_MESSAGES_QUERY_REGEX = /\/channels\/\w+\/messages(\?|$)/;
 const REACTIONS_ME_REGEX = /\/reactions\/[^/]+\/@me$/;
 const CHANNEL_ID_REGEX = /\/channels\/\w+$/;
 const CHANNEL_TYPING_REGEX = /\/channels\/\w+\/typing$/;
-const INTERACTION_ORIGINAL_REGEX = /\/webhooks\/\w+\/[^/]+\/messages\/@original/;
+const INTERACTION_ORIGINAL_REGEX =
+  /\/webhooks\/\w+\/[^/]+\/messages\/@original/;
 const INTERACTION_FOLLOWUP_REGEX = /\/webhooks\/\w+\/[^/]+(\?|$)/;
 
 /**
