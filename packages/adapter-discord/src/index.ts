@@ -417,10 +417,10 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
         channelId: interactionChannelId,
       });
 
-    const command = commandName.startsWith("/")
-      ? commandName
-      : `/${commandName}`;
-    const text = this.formatSlashCommandText(interaction.data?.options);
+    const { command, text } = this.parseSlashCommand(
+      commandName,
+      interaction.data?.options
+    );
 
     this.logger.debug("Processing Discord slash command", {
       command,
@@ -461,30 +461,46 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
     );
   }
 
-  private formatSlashCommandText(options?: DiscordCommandOption[]): string {
-    // TODO(discord-slash): Subcommand and subcommand-group names are currently
-    // omitted from `event.text` (we only flatten option values). Decide whether
-    // the SDK contract should include full command path and/or named args.
-    if (!options || options.length === 0) {
-      return "";
-    }
+  /**
+   * Parse a Discord slash command into a full command path and flat text.
+   *
+   * Subcommand and subcommand-group names are appended to the command path
+   * so `/project issue create --title="Login fails"` becomes:
+   *   command = "/project issue create"
+   *   text    = "Login fails"
+   *
+   * Leaf option values are flattened into `text`. Consumers needing the full
+   * option tree (names, types) can use `event.raw`.
+   */
+  private parseSlashCommand(
+    name: string,
+    options?: DiscordCommandOption[]
+  ): { command: string; text: string } {
+    const commandParts: string[] = [name.startsWith("/") ? name : `/${name}`];
+    const valueParts: string[] = [];
 
-    const parts: string[] = [];
     const collect = (items: DiscordCommandOption[]): void => {
       for (const option of items) {
         if (option.value !== undefined) {
-          parts.push(String(option.value));
+          valueParts.push(String(option.value));
           continue;
         }
-        // Subcommand/group — recurse into children, skip the name
+        // Subcommand or subcommand-group — append name to command path
         if (option.options && option.options.length > 0) {
+          commandParts.push(option.name);
           collect(option.options);
         }
       }
     };
 
-    collect(options);
-    return parts.join(" ").trim();
+    if (options && options.length > 0) {
+      collect(options);
+    }
+
+    return {
+      command: commandParts.join(" "),
+      text: valueParts.join(" ").trim(),
+    };
   }
 
   /**

@@ -471,6 +471,66 @@ describe("handleWebhook - APPLICATION_COMMAND", () => {
     );
   });
 
+  it("expands subcommand path into event.command", async () => {
+    const processSlashCommand = vi.fn();
+    await adapter.initialize({
+      processSlashCommand,
+    } as unknown as ChatInstance);
+
+    const body = JSON.stringify({
+      type: InteractionType.ApplicationCommand,
+      id: "interaction123",
+      application_id: "test-app-id",
+      token: "interaction-token",
+      version: 1,
+      guild_id: "guild123",
+      channel_id: "channel456",
+      member: {
+        user: {
+          id: "user789",
+          username: "testuser",
+          discriminator: "0001",
+          global_name: "Test User",
+        },
+        roles: [],
+        joined_at: "2021-01-01T00:00:00.000Z",
+      },
+      data: {
+        name: "project",
+        type: 1,
+        options: [
+          {
+            name: "issue",
+            type: 2, // SUB_COMMAND_GROUP
+            options: [
+              {
+                name: "create",
+                type: 1, // SUB_COMMAND
+                options: [
+                  { name: "title", type: 3, value: "Login fails" },
+                  { name: "priority", type: 3, value: "high" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const request = createWebhookRequest(body);
+
+    const response = await adapter.handleWebhook(request);
+    expect(response.status).toBe(200);
+
+    expect(processSlashCommand).toHaveBeenCalledTimes(1);
+    expect(processSlashCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: "/project issue create",
+        text: "Login fails high",
+      }),
+      undefined
+    );
+  });
+
   it("resolves deferred slash responses via interaction webhook", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
