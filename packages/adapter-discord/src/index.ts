@@ -767,14 +767,13 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
 
     // Handle file uploads
     const files = extractFiles(message);
-    const slashContext = this.getSlashCommandContext(actualThreadId);
-    if (slashContext) {
-      return this.postSlashCommandResponse(
-        slashContext,
-        actualThreadId,
-        payload,
-        files
-      );
+    const slashResponse = this.tryPostSlashResponse(
+      actualThreadId,
+      payload,
+      files
+    );
+    if (slashResponse) {
+      return slashResponse;
     }
     if (files.length > 0) {
       return this.postMessageWithFiles(
@@ -811,17 +810,20 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
     };
   }
 
-  private getSlashCommandContext(
-    channelId: string
-  ): DiscordSlashCommandContext | undefined {
+  private tryPostSlashResponse(
+    threadId: string,
+    payload: DiscordMessagePayload,
+    files: Array<{
+      filename: string;
+      data: Buffer | Blob | ArrayBuffer;
+      mimeType?: string;
+    }>
+  ): Promise<RawMessage<unknown>> | undefined {
     const slashContext = this.requestContext.getStore()?.slashCommand;
-    if (!slashContext) {
+    if (!slashContext || slashContext.channelId !== threadId) {
       return undefined;
     }
-    if (slashContext.channelId !== channelId) {
-      return undefined;
-    }
-    return slashContext;
+    return this.postSlashCommandResponse(slashContext, threadId, payload, files);
   }
 
   private async postSlashCommandResponse(
@@ -2298,14 +2300,9 @@ export class DiscordAdapter implements Adapter<DiscordThreadId, unknown> {
     }
 
     const files = extractFiles(message);
-    const slashContext = this.getSlashCommandContext(channelId);
-    if (slashContext) {
-      return this.postSlashCommandResponse(
-        slashContext,
-        channelId,
-        payload,
-        files
-      );
+    const slashResponse = this.tryPostSlashResponse(channelId, payload, files);
+    if (slashResponse) {
+      return slashResponse;
     }
     if (files.length > 0) {
       return this.postMessageWithFiles(
